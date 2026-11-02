@@ -1,54 +1,153 @@
-:root{--bg:#f4f1ec;--card:#fff;--tx:#1d1b1a;--mu:#6b6560;--ac:#8a1c2b;--bd:#d9d3ca;--in:#faf8f5;--gold:#a9780a;--pos:#2e7d4f;--neg:#b3261e;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141214;--card:#1f1c1f;--tx:#eee9e4;--mu:#a49c95;--ac:#e0586b;--bd:#3a353a;--in:#2a262a;--gold:#f0c14b;--pos:#6fcf97;--neg:#ff7b72}}
+/* ===== Tema "livro da Biblioteca": pergaminho, tinta e ouro ===== */
+:root{
+  --outer1:#2e1f13;--outer2:#0e0905;
+  --pg1:#f3e9cd;--pg2:#dfcc9c;
+  --tx:#2a1d10;--mu:#6e5a3f;
+  --ac:#7a1426;                 /* carmesim (selo de cera) */
+  --bd:#8a6a3a;                 /* linha de tinta */
+  --in:rgba(255,252,240,.55);   /* campos */
+  --card:rgba(255,250,232,.3);
+  --gold:#8c640c;--gold-l:#c9a24a;
+  --pos:#2d5e3a;--neg:#8e1b24;
+  --f-head:Cinzel,Georgia,serif;
+  --f-body:'EB Garamond',Georgia,'Times New Roman',serif;
+  --deco:var(--gold-l);          /* ornamentos (o Efflorescent troca esta cor) */
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --outer1:#1a120b;--outer2:#070503;
+  --pg1:#2c2318;--pg2:#1b140d;
+  --tx:#eadfc4;--mu:#a8957a;
+  --ac:#d9506a;--bd:#7d6338;
+  --in:rgba(0,0,0,.28);--card:rgba(255,235,190,.04);
+  --gold:#e0b84f;--gold-l:#e0b84f;
+  --pos:#7fcf97;--neg:#ff8a82}}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:Georgia,'Times New Roman',serif;line-height:1.4}
-main{max-width:860px;margin:0 auto;padding:16px}
-h1{text-align:center;letter-spacing:.08em;margin:8px 0 16px;font-size:1.4rem}
-h2{font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ac);margin:0 0 10px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
-.card.shin{border-color:var(--gold)}.card.shin h2{color:var(--gold)}
+body{margin:0;min-height:100vh;color:var(--tx);
+  font-family:var(--f-body);font-size:17px;line-height:1.45;
+  background:radial-gradient(ellipse at 50% 0%,var(--outer1),var(--outer2) 75%) fixed}
+body.on{--outer1:#2a1d05;--outer2:#070503}
+
+/* ----- a página ----- */
+.livro{max-width:900px;margin:22px auto;padding:26px 30px 30px;position:relative;
+  background:
+    linear-gradient(90deg,rgba(70,40,10,.28),transparent 7%,transparent 93%,rgba(70,40,10,.22)),
+    radial-gradient(ellipse at 50% 30%,var(--pg1),var(--pg2));
+  border:1px solid #4a2f17;border-radius:3px 12px 12px 3px;
+  box-shadow:0 0 0 5px #3a2514,0 0 0 7px var(--deco),0 28px 60px rgba(0,0,0,.75),inset 0 0 90px rgba(90,55,15,.3)}
+.livro::before{content:"";position:absolute;inset:10px;border:1px solid var(--bd);border-radius:2px;pointer-events:none;opacity:.55}
+.capa{text-align:center;margin-bottom:18px}
+.orn{color:var(--deco);letter-spacing:.5em;font-size:1rem}
+h1{font-family:var(--f-head);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:1.7rem;margin:4px 0 0;color:var(--ac)}
+.sub{font-style:italic;color:var(--mu);margin-top:2px}
+.rodape{text-align:center;color:var(--deco);margin-top:10px;letter-spacing:.2em}
+
+/* ----- seções ----- */
+h2{display:flex;align-items:center;gap:12px;font-family:var(--f-head);font-weight:700;font-size:.95rem;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ac);margin:0 0 12px}
+h2::before,h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--deco),transparent)}
+.card{background:var(--card);border:3px double var(--bd);border-radius:3px;padding:14px 16px;margin-bottom:16px}
+.card.shin{border-color:var(--gold-l);background:linear-gradient(rgba(201,162,74,.16),transparent 70%)}
+.card.shin h2{color:var(--gold)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-label,.mu{font-size:.78rem;color:var(--mu)}
-input,textarea,select{width:100%;background:var(--in);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:7px;font:inherit}
-button{background:var(--ac);color:#fff;border:0;border-radius:6px;padding:7px 11px;font:inherit;cursor:pointer}
+label,.mu{font-size:.82rem;color:var(--mu);font-style:italic}
+
+/* ----- campos escritos à tinta ----- */
+input,textarea,select{width:100%;background:var(--in);color:var(--tx);border:0;border-bottom:1px solid var(--bd);
+  border-radius:2px;padding:6px 8px;font:inherit;font-size:1rem}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--deco);outline-offset:1px}
+textarea{border:1px solid var(--bd);resize:vertical}
+option{background:var(--pg1);color:var(--tx)}
+input::placeholder,textarea::placeholder{color:var(--mu);opacity:.7;font-style:italic}
+
+/* ----- botões ----- */
+button{background:#3a2514;color:#f3e3b8;border:1px solid var(--deco);border-radius:3px;padding:6px 12px;
+  font-family:var(--f-head);font-size:.78rem;letter-spacing:.06em;cursor:pointer}
+button:hover{filter:brightness(1.15)}
 button.g{background:transparent;color:var(--tx);border:1px solid var(--bd)}
-button.au{background:var(--gold);color:#111}
-button:disabled{opacity:.4;cursor:default}
-.top{display:flex;gap:14px;flex-wrap:wrap}
-.pic{width:140px;height:180px;border:2px dashed var(--bd);border-radius:8px;background:var(--in) center/cover no-repeat;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mu);text-align:center;font-size:.8rem}
+button.au{background:linear-gradient(#e2c26e,#b58a2c);color:#2a1a06;border-color:#7d5a14;font-weight:700}
+button:disabled{opacity:.4;cursor:default;filter:none}
+
+/* ----- retrato ----- */
+.top{display:flex;gap:16px;flex-wrap:wrap}
 .top .grid{flex:1;min-width:240px}
+.pic{width:140px;height:180px;border:4px double var(--bd);background:var(--in) center/cover no-repeat;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--mu);text-align:center;font-size:.85rem;font-style:italic;
+  box-shadow:inset 0 0 22px rgba(0,0,0,.28)}
+
+/* ----- vitais ----- */
 .vit{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.vit b{min-width:140px}.vit input{width:64px;text-align:center}
-.bar{height:8px;background:var(--in);border-radius:4px;margin:4px 0 12px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--ac)}
+.vit b{min-width:140px;font-family:var(--f-head);font-size:.85rem;letter-spacing:.05em}
+.vit input{width:64px;text-align:center}
 .row{display:flex;gap:6px;margin-bottom:6px;align-items:center;flex-wrap:wrap}
 .row input[type=number]{width:70px;flex:none;text-align:center}
 .acts{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+
+/* ----- tabela de atributos ----- */
 table{width:100%;border-collapse:collapse}
-td,th{padding:5px 4px;text-align:center;border-bottom:1px solid var(--bd)}
+th{font-family:var(--f-head);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+td,th{padding:5px 4px;text-align:center;border-bottom:1px solid rgba(138,106,58,.45)}
 td:first-child,th:first-child{text-align:left}
-.fx{border:1px solid var(--bd);border-left-width:5px;border-radius:6px;padding:8px;margin-bottom:8px}
+
+/* ----- status effects / habilidades ----- */
+.fx{border:1px solid var(--bd);border-left-width:6px;border-radius:3px;padding:8px;margin-bottom:8px;background:var(--in)}
 .fx.p{border-left-color:var(--pos)}.fx.n{border-left-color:var(--neg)}
-.tag{font-size:.7rem;padding:1px 6px;border-radius:9px;border:1px solid var(--gold);color:var(--gold)}
-#log{min-height:1.4em;padding:8px;background:var(--in);border-radius:6px;font-size:.9rem;white-space:pre-wrap}
+.tag{font-size:.7rem;padding:1px 8px;border-radius:9px;border:1px solid var(--gold);color:var(--gold);font-family:var(--f-head);letter-spacing:.08em}
+#log,#logego{min-height:1.4em;padding:8px 10px;background:rgba(120,80,30,.12);border-left:3px solid var(--deco);
+  font-style:italic;white-space:pre-wrap}
 .ring{font-size:1.6rem;color:var(--gold)}
-body.on{--bg:#0d0a05}
+
+/* ----- Efflorescent ----- */
+.eff{border:1px dashed var(--deco);border-radius:3px;padding:8px 10px;margin-top:12px}
+.eff.on{border-style:solid;border-color:#e0334f;background:radial-gradient(ellipse at 50% 0%,rgba(224,51,79,.32),transparent 75%);box-shadow:0 0 18px rgba(224,51,79,.45)}
+
+/* ----- controles deslizantes ----- */
+.slider{-webkit-appearance:none;appearance:none;width:100%;height:10px;margin:4px 0 12px;border:1px solid var(--bd);border-radius:5px;outline:none;cursor:pointer;
+  background:linear-gradient(to right,var(--ac) var(--p,100%),var(--in) var(--p,100%))}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#e2c26e,#8c640c);border:2px solid #3a2514;cursor:grab}
+.slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#c9a24a;border:2px solid #3a2514;cursor:grab}
+.slider::-moz-range-track{background:transparent}
+
+/* ----- aura e cena do Shin ----- */
 .aura{position:fixed;inset:0;pointer-events:none;z-index:50;box-shadow:inset 0 0 90px 20px rgba(240,193,75,.55);animation:pulso 2.4s ease-in-out infinite}
 @keyframes pulso{50%{box-shadow:inset 0 0 140px 45px rgba(240,193,75,.85)}}
 .cena{position:fixed;inset:0;z-index:100;background:#000;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;animation:surgir .6s}
-.cena p{position:relative;color:#f0c14b;font-size:clamp(1.4rem,5vw,2.4rem);text-shadow:0 0 24px #f0c14b;letter-spacing:.05em;max-width:700px;animation:crescer 1.8s ease-out}
+.cena p{position:relative;color:#f0c14b;font-family:var(--f-head);font-size:clamp(1.4rem,5vw,2.4rem);text-shadow:0 0 24px #f0c14b;letter-spacing:.05em;max-width:700px;animation:crescer 1.8s ease-out}
 .halo{position:absolute;width:70vmin;height:70vmin;border-radius:50%;background:radial-gradient(circle,rgba(240,193,75,.45),transparent 70%);animation:crescer 2.6s ease-out}
 @keyframes surgir{from{opacity:0}}
 @keyframes crescer{from{opacity:0;transform:scale(.7)}}
 @media (prefers-reduced-motion:reduce){.aura,.cena,.cena p,.halo{animation:none}}
 
-/* Controles deslizantes (vida, stamina, sanidade) */
-.slider{-webkit-appearance:none;appearance:none;width:100%;height:10px;margin:4px 0 12px;border:1px solid var(--bd);border-radius:5px;outline:none;cursor:pointer;
-  background:linear-gradient(to right,var(--ac) var(--p,100%),var(--in) var(--p,100%))}
-.slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--ac);border:2px solid var(--card);cursor:grab}
-.slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ac);border:2px solid var(--card);cursor:grab}
-.slider::-moz-range-track{background:transparent}
-/* Resultado dos testes de EGO */
-#logego{min-height:1.4em;padding:8px;background:var(--in);border-radius:6px;font-size:.9rem;white-space:pre-wrap}
+/* ----- celular ----- */
+@media (max-width:600px){
+  body{font-size:16px}
+  .livro{margin:8px;padding:18px 12px 20px;box-shadow:0 0 0 3px #3a2514,0 0 0 4px var(--deco),0 14px 30px rgba(0,0,0,.7),inset 0 0 50px rgba(90,55,15,.3)}
+  h1{font-size:1.25rem}
+  .card{padding:12px 10px}
+}
+
+/* ===== Efflorescent EGO: página escura, tinta de sangue, fontes sombrias =====
+   Não mexe em --gold nem na .aura: o dourado do Shin continua valendo por cima. */
+body.eff{
+  --f-head:'Pirata One','Cinzel',Georgia,serif;
+  --f-body:'Almendra','EB Garamond',Georgia,serif;
+  --outer1:#14060a;--outer2:#030102;
+  --pg1:#1b0d12;--pg2:#0b0407;
+  --tx:#e6d6d6;--mu:#a58a90;
+  --ac:#e0334f;--bd:#5c2530;--deco:#8f1d33;
+  --in:rgba(0,0,0,.42);--card:rgba(120,20,40,.08);
+  --gold:#e0b84f;--gold-l:#e0b84f;      /* ouro legível, reservado ao Shin */
+  --pos:#7fcf97;--neg:#ff8a82}
+body.eff .livro{
+  background:radial-gradient(ellipse at 50% 30%,var(--pg1),var(--pg2));
+  border-color:#000;
+  box-shadow:0 0 0 5px #1a0a0e,0 0 0 7px var(--deco),0 0 46px rgba(143,29,51,.4),0 28px 60px #000,inset 0 0 120px rgba(0,0,0,.85)}
+body.eff h1{text-shadow:0 0 14px rgba(224,51,79,.65)}
+body.eff h2{letter-spacing:.2em}
+body.eff button{background:#2a0c13;color:#f0d6d9}
+body.eff button.g{background:transparent;color:var(--tx);border-color:var(--bd)}
+body.eff button.au{background:linear-gradient(#b02a43,#6a0f20);color:#fff;border-color:#e0334f}
+body.eff .slider::-webkit-slider-thumb{background:radial-gradient(circle at 35% 35%,#e0334f,#5c0f1e);border-color:#000}
+body.eff .slider::-moz-range-thumb{background:#c4263f;border-color:#000}
+body.eff #log,body.eff #logego{background:rgba(143,29,51,.14)}
