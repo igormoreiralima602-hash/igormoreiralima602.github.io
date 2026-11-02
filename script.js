@@ -1,6 +1,18 @@
 // =============== 1. DADOS DAS REGRAS (edite aqui se o sistema mudar) ===============
 const KEY = 'ficha-aw-v2';
-const SAN_MIN = -45, SAN_MAX = 45;   // limites da sanidade (definidos pelo livro)
+const SAN_MIN = -45, SAN_MAX = 45;
+const IDX = 'ficha-aw-lista';
+const chave = id => id === 'principal' ? KEY : KEY + ':' + id;   
+
+let INDICE = lerIndice();
+function lerIndice(){
+  try{
+    const r = JSON.parse(localStorage.getItem(IDX) || 'null');
+    if(r && r.lista && r.lista.length) return r;
+  }catch(e){}
+  return { atual:'principal', lista:[{ id:'principal', nome:'Ficha principal' }] };
+}
+function salvarIndice(){ try{ localStorage.setItem(IDX, JSON.stringify(INDICE)); }catch(e){} }
 const ATTRS = [['corpo','Corpo'],['agi','Agilidade'],['int','Inteligência'],['per','Percepção'],['vit','Vitalidade'],['car','Carisma']];
 const PECADOS = ['Ira','Gula','Ganância','Luxúria','Inveja','Preguiça','Orgulho','Outro'];
 
@@ -33,11 +45,19 @@ function padrao(){return{f:{},img:'',lvl:0,xp:0,livres:0,
 let S = carregar(), LOG = '', LOGEGO = '';
 function carregar(){
   const d = padrao();
-  try{ const r = JSON.parse(localStorage.getItem(KEY)||'null');
-    if(r) return {...d,...r,attrs:{...d.attrs,...r.attrs},shin:{...d.shin,...r.shin},ego:{...d.ego,...r.ego}}; }catch(e){}
+  try{ const r = JSON.parse(localStorage.getItem(chave(INDICE.atual))||'null');
+       if(r) return {...d,...r,attrs:{...d.attrs,...r.attrs},shin:{...d.shin,...r.shin},ego:{...d.ego,...r.ego}}; }catch(e){}
   return d;
 }
-function salvar(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
+
+function salvar(){
+  try{
+    localStorage.setItem(chave(INDICE.atual), JSON.stringify(S));
+    // o nome na lista acompanha o campo "Nome" da ficha
+    const it = INDICE.lista.find(f => f.id === INDICE.atual);
+    if(it && S.f.nome && it.nome !== S.f.nome){ it.nome = S.f.nome; salvarIndice(); }
+  }catch(e){}
+}
 
 // =============== 3. CÁLCULOS AUTOMÁTICOS ===============
 function calc(){
@@ -73,7 +93,7 @@ const $ = s => document.querySelector(s);
 
 function render(){
   const C = calc(), ativo = S.shin.on;
-
+  
   const topo = `<section class="card top">
     <div class="pic" id="pic" style="background-image:${S.img?`url(${S.img})`:'none'}">${S.img?'':'Clique para<br>enviar imagem'}</div>
     <input type="file" id="file" accept="image/*" hidden>
@@ -166,13 +186,18 @@ function render(){
     ${S[nome].map((it,i)=>`<div class="row">${cols.map(([k,ph,t])=>`<input type="${t}" ${t==='number'?'style="width:80px;flex:none"':''} placeholder="${ph}" data-b="${nome}.${i}.${k}" value="${esc(it[k])}">`).join('')}${btn('del',nome+','+i,'✕')}</div>`).join('')}
     ${btn('add',nome,add)}</section>`;
 
+  const gerente = `<section class="card"><h2>Fichas</h2>
+    <select id="seletor">${INDICE.lista.map(f =>
+      `<option value="${f.id}" ${f.id===INDICE.atual?'selected':''}>${esc(f.nome)}</option>`).join('')}</select>
+    <div class="acts">${btn('fnova','','+ Nova','au')}${btn('fdup','','Duplicar')}${btn('fdel','','Excluir')}</div></section>`;
+
   const io = `<section class="card"><h2>Salvar / Compartilhar</h2>
     <p class="mu">A ficha é salva sozinha neste navegador. Para levar a outro aparelho: Exportar, copie o texto e cole lá em Importar.</p>
     <textarea id="io" rows="3" placeholder="O código da ficha aparece aqui"></textarea>
     <div class="acts">${btn('exp','','Exportar','')}${btn('imp','','Importar')}${btn('clr','','Limpar ficha')}</div></section>`;
 
   const foco = document.activeElement?.id;
-  $('#app').innerHTML = topo+vitais+atrs+combate+fxHtml+shin
+  $('#app').innerHTML = gerente+topo+vitais+atrs+combate+fxHtml+shin
     +egoHtml
     +lista('equipego','Equipamentos de EGO',[['n','Equipamento','text'],['d','Efeito / notas','text']],'+ Equipamento')
     +habs()
@@ -184,6 +209,7 @@ function render(){
   document.body.classList.toggle('eff', !!S.ego.eff);   // tema escuro do Efflorescent
   $('#pic').onclick = () => $('#file').click();
   $('#file').onchange = carregarImagem;
+
 }
 
 // Seção de habilidades: texto livre escrito pelo jogador
@@ -251,6 +277,33 @@ function acao(a,x){
       S.ego.eff = true;
       LOGEGO = `${h.n || 'Habilidade de EGO'} usada: Efflorescent ativo (+${6+S.lvl} nos acertos de dano e clash).`; break; }
     case 'egooff': S.ego.eff = false; LOGEGO = 'Efflorescent encerrado.'; break;
+    case 'fnova': {
+  const nome = prompt('Nome da nova ficha:', 'Novo NPC'); if(!nome) break;
+  salvar();                                          
+  const id = 'f' + Date.now().toString(36);            
+  INDICE.lista.push({ id, nome }); INDICE.atual = id; salvarIndice();
+  S = padrao(); S.f.nome = nome; LOG = ''; LOGEGO = '';
+  break;
+}
+case 'fdup': {                                        
+  salvar();
+  const id = 'f' + Date.now().toString(36);
+  const copia = JSON.parse(JSON.stringify(S));         // cópia independente
+  copia.f.nome = (S.f.nome || 'Ficha') + ' (cópia)';
+  localStorage.setItem(chave(id), JSON.stringify(copia));
+  INDICE.lista.push({ id, nome: copia.f.nome }); INDICE.atual = id; salvarIndice();
+  S = copia; LOG = ''; LOGEGO = '';
+  break;
+}
+case 'fdel': {
+  if(INDICE.lista.length === 1){ alert('Precisa existir pelo menos uma ficha.'); break; }
+  if(!confirm(`Excluir "${S.f.nome || 'esta ficha'}" para sempre?`)) break;
+  localStorage.removeItem(chave(INDICE.atual));
+  INDICE.lista = INDICE.lista.filter(f => f.id !== INDICE.atual);
+  INDICE.atual = INDICE.lista[0].id; salvarIndice();
+  S = carregar(); LOG = ''; LOGEGO = '';
+  break;
+}
     case 'egoman': { const r=d(20); LOGEGO=`Manifestação de EGO: 1d20 (${r}) + Carisma ${C.eff.car} = ${r+C.eff.car}. O mestre define a dificuldade; em falha pode ocorrer Distorção.`; break; }
     case 'egosan': { const r=d(20); LOGEGO=`Teste de sanidade: 1d20 (${r}) + Carisma ${C.eff.car} = ${r+C.eff.car}`; break; }
     case 'cena': cena(); break;
@@ -278,14 +331,24 @@ function acao(a,x){
   limitarEstado(); S.ego.falhas = Math.max(0, S.ego.falhas|0);
   salvar(); render();
 }
+
+function trocarFicha(id){
+  salvar();                                  
+  INDICE.atual = id; salvarIndice();
+  S = carregar(); LOG = ''; LOGEGO = '';
+  render();
+}
+
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-a]'); if(b && !b.disabled) acao(b.dataset.a,b.dataset.x); });
 document.addEventListener('change', e=>{
-  const el=e.target; if(!el.dataset.b) return;
+  const el = e.target;
+  if(el.id === 'seletor'){ trocarFicha(el.value); return; }   // ← NOVA
+  if(!el.dataset.b) return;
   set(el.dataset.b, (el.type==='number' || el.type==='range') ? (+el.value||0) : el.value);
   limitarEstado();
   salvar(); render();
 });
-// Enquanto arrasta um controle deslizante: atualiza cor e número ao vivo (sem redesenhar a tela)
+// Enquanto arrasta um controle deslizante: atualiza cor e número ao vivo 
 document.addEventListener('input', e=>{
   const el = e.target; if(el.type!=='range') return;
   el.style.setProperty('--p', ((el.value-el.min)/((el.max-el.min)||1)*100)+'%');
