@@ -29,7 +29,7 @@ function padrao(){return{f:{},img:'',lvl:0,xp:0,livres:0,
   attrs:{corpo:0,agi:0,int:0,per:0,vit:0,car:0},
   shin:{pecado:'',lvl:0,xp:0,on:false,passiva:'',frase:''},
   fx:[],inv:[],armas:[],habs:[],equipego:[],
-  ego:{estado:'nao',nome:'',desc:'',falhas:0,hab:[{},{},{}]}}}
+  ego:{estado:'nao',nome:'',desc:'',falhas:0,eff:false,hab:[{},{},{}]}}}
 let S = carregar(), LOG = '', LOGEGO = '';
 function carregar(){
   const d = padrao();
@@ -151,10 +151,14 @@ function render(){
     <div id="logego">${esc(LOGEGO)||'Os resultados dos testes de EGO aparecem aqui.'}</div>
     ${eg.estado==='dis'?`<div class="vit" style="margin-top:8px"><b>Falhas p/ sair da Distorção</b>${btn('adj','ego.falhas,-1','−')}<b style="min-width:0">${eg.falhas}</b>${btn('adj','ego.falhas,1','+')}</div>
       <p class="mu">Em Distorção o jogador perde o controle até resolver o conflito (testes de sanidade). Cada falha reduz as chances; pouca vida ou um aliado próximo ajudam. Ao resolver sozinho, o EGO se manifesta normalmente.</p>`:''}
+    <div class="eff ${eg.eff?'on':''}"><b>✿ Efflorescent EGO</b>
+      ${eg.eff
+        ? `<span class="tag">ATIVO</span> Bônus nos acertos: <b>+${6+S.lvl}</b> <span class="mu">(+6 + nível; vale para dano e clash)</span> ${btn('egooff','','Encerrar')}`
+        : `<span class="mu">Inativo. Com o EGO manifestado, use uma habilidade de EGO para entrar no estado Efflorescent: +6 + nível nos acertos (dano e clash).</span>`}</div>
     <h2 style="margin-top:14px">Habilidades de EGO</h2>
     ${[0,1,2].map(i=>`<div class="fx" style="border-left-color:var(--gold)">
       <div class="row"><input style="flex:1;min-width:140px" placeholder="Habilidade ${i+1}" data-b="ego.hab.${i}.n" value="${esc(eg.hab[i]?.n)}">
-        <input style="width:130px" placeholder="Dados (ex.: 3d8+5)" data-b="ego.hab.${i}.d" value="${esc(eg.hab[i]?.d)}"></div>
+        <input style="width:130px" placeholder="Dados (ex.: 3d8+5)" data-b="ego.hab.${i}.d" value="${esc(eg.hab[i]?.d)}">${btn('egouse',i,'Usar','au')}</div>
       <textarea rows="2" placeholder="Efeito, descrição, status effects aplicados…" data-b="ego.hab.${i}.e">${esc(eg.hab[i]?.e)}</textarea></div>`).join('')}
     <p class="mu">Todo personagem tem 3 habilidades de EGO, que podem ser trocadas a cada 2 níveis (próxima troca: nível ${(Math.floor(S.lvl/2)+1)*2}).</p></section>`;
 
@@ -177,6 +181,7 @@ function render(){
     +(ativo?'<div class="aura"></div>':'')
     +(CENA?`<div class="cena" data-a="fechar"><div class="halo"></div><p>${esc(S.shin.frase||'Shin!')}</p></div>`:'');
   document.body.classList.toggle('on',ativo);
+  document.body.classList.toggle('eff', !!S.ego.eff);   // tema escuro do Efflorescent
   $('#pic').onclick = () => $('#file').click();
   $('#file').onchange = carregarImagem;
 }
@@ -197,8 +202,11 @@ function habs(){ return `<section class="card"><h2>Habilidades</h2>
 
 // =============== 5. AÇÕES ===============
 function ler(){ return {C:calc()}; }
-// Mantém a sanidade dentro dos limites do livro
-function limitarSanidade(){ S.sa = Math.max(SAN_MIN, Math.min(SAN_MAX, S.sa)); }
+// Mantém os dados coerentes com as regras (sanidade nos limites; Efflorescent só com EGO manifestado)
+function limitarEstado(){
+  S.sa = Math.max(SAN_MIN, Math.min(SAN_MAX, S.sa));
+  if(S.ego.estado !== 'man') S.ego.eff = false;   // Efflorescent só existe com o EGO manifestado
+}
 
 function fimTurno(){
   const msgs = [];
@@ -220,10 +228,29 @@ function acao(a,x){
   switch(a){
     case 'adj': set(p1,get(p1)+(+p2)); break;
     case 'attr': S.attrs[p1]=Math.max(0,S.attrs[p1]+(+p2)); S.livres-=(+p2); break;
-    case 'lvlup': if(S.xp>=need(S.lvl)){ S.xp-=need(S.lvl); S.lvl++; S.livres+=4; LOG=`Nível ${S.lvl}! +4 pontos livres de atributo.`; } break;
-    case 'shinup': if(S.shin.xp>=need(S.shin.lvl)){ S.shin.xp-=need(S.shin.lvl); S.shin.lvl++; LOG=`Shin nível ${S.shin.lvl}!`+(S.shin.lvl%6===0?' Novo anel de Mang!':''); } break;
+    case 'lvlup':
+  if(S.xp >= need(S.lvl)){
+    S.xp -= need(S.lvl);
+    S.lvl++;
+    S.livres += 4;
+    LOG = `Nível ${S.lvl}! +4 pontos livres de atributo.`;
+    if(S.lvl % 2 === 0){        // níveis 2, 4, 6...
+      S.stMax += 5;
+      S.st += 5;
+      LOG += ' +5 de stamina máxima.';
+    }
+  }
+  break;
+    case 'shinup': 
+    if(S.shin.xp>=need(S.shin.lvl)){ 
+      S.shin.xp-=need(S.shin.lvl); S.shin.lvl++; LOG=`Shin nível ${S.shin.lvl}!`+(S.shin.lvl%6===0?' Novo anel de Mang!':''); } break;
     case 'shin': if(p1==='st'){ if(S.st<15){LOG='Stamina insuficiente (precisa de 15).';break;} S.st-=15; S.shin.on=true; cena(); LOG='Shin ativado (−15 stamina).'; }
                  else if(p1==='dano'){ S.shin.on=true; cena(); LOG='Shin ativado (50 de dano causado).'; } else { S.shin.on=false; LOG='Shin desativado.'; } break;
+    case 'egouse': { const h = S.ego.hab[+p1] || {};
+      if(S.ego.estado !== 'man'){ LOGEGO = 'O EGO precisa estar Manifestado para usar habilidades de EGO.'; break; }
+      S.ego.eff = true;
+      LOGEGO = `${h.n || 'Habilidade de EGO'} usada: Efflorescent ativo (+${6+S.lvl} nos acertos de dano e clash).`; break; }
+    case 'egooff': S.ego.eff = false; LOGEGO = 'Efflorescent encerrado.'; break;
     case 'egoman': { const r=d(20); LOGEGO=`Manifestação de EGO: 1d20 (${r}) + Carisma ${C.eff.car} = ${r+C.eff.car}. O mestre define a dificuldade; em falha pode ocorrer Distorção.`; break; }
     case 'egosan': { const r=d(20); LOGEGO=`Teste de sanidade: 1d20 (${r}) + Carisma ${C.eff.car} = ${r+C.eff.car}`; break; }
     case 'cena': cena(); break;
@@ -248,14 +275,14 @@ function acao(a,x){
     case 'imp': try{ S={...padrao(),...JSON.parse($('#io').value)}; S.attrs={...padrao().attrs,...S.attrs}; S.shin={...padrao().shin,...S.shin}; S.ego={...padrao().ego,...S.ego}; }catch(e){ alert('Código inválido.'); } break;
     case 'clr': if(confirm('Apagar toda a ficha?')) S=padrao(); break;
   }
-  limitarSanidade(); S.ego.falhas = Math.max(0, S.ego.falhas|0);
+  limitarEstado(); S.ego.falhas = Math.max(0, S.ego.falhas|0);
   salvar(); render();
 }
 document.addEventListener('click', e=>{ const b=e.target.closest('[data-a]'); if(b && !b.disabled) acao(b.dataset.a,b.dataset.x); });
 document.addEventListener('change', e=>{
   const el=e.target; if(!el.dataset.b) return;
   set(el.dataset.b, (el.type==='number' || el.type==='range') ? (+el.value||0) : el.value);
-  limitarSanidade();
+  limitarEstado();
   salvar(); render();
 });
 // Enquanto arrasta um controle deslizante: atualiza cor e número ao vivo (sem redesenhar a tela)
