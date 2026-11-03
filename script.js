@@ -41,7 +41,7 @@ function padrao(){return{f:{},img:'',lvl:0,xp:0,livres:0,
   attrs:{corpo:0,agi:0,int:0,per:0,vit:0,car:0},
   shin:{pecado:'',lvl:0,xp:0,on:false,passiva:'',frase:''},
   fx:[],inv:[],armas:[],habs:[],equipego:[],
-  ego:{estado:'nao',nome:'',desc:'',falhas:0,eff:false,hab:[{},{},{}]}}}
+  ego:{estado:'nao',nome:'',desc:'',falhas:0,eff:false,imgEff:'',hab:[{},{},{}]}}}
 let S = carregar(), LOG = '', LOGEGO = '';
 function carregar(){
   const d = padrao();
@@ -93,9 +93,9 @@ const $ = s => document.querySelector(s);
 
 function render(){
   const C = calc(), ativo = S.shin.on;
-  
+  const imgatual = (S.ego.eff && S.ego.imgEff) ? S.ego.imgEff : S.img;
   const topo = `<section class="card top">
-    <div class="pic" id="pic" style="background-image:${S.img?`url(${S.img})`:'none'}">${S.img?'':'Clique para<br>enviar imagem'}</div>
+    <div class="pic" id="pic" style="background-image:${imgatual?`url(${imgatual})`:'none'}">${imgatual?'':'Clique para<br>enviar imagem'}</div>
     <input type="file" id="file" accept="image/*" hidden>
     <div class="grid">
       ${[['nome','Nome'],['idade','Idade'],['afiliacao','Afiliação'],['financeiro','Estado financeiro'],['ego','EGO']].map(([k,l])=>`<div><label>${l}</label>${inp('f.'+k)}</div>`).join('')}
@@ -159,7 +159,7 @@ function render(){
     <label style="margin-top:8px">Passiva de Shin (definida com o mestre)</label>
     <textarea data-b="shin.passiva" rows="2">${esc(sh.passiva)}</textarea></section>`;
 
-  const eg = S.ego;
+    const eg = S.ego;
   const egoHtml = `<section class="card shin"><h2>EGO</h2>
     <div class="grid">
       <div><label>Nome do EGO</label>${inp('ego.nome')}</div>
@@ -174,7 +174,15 @@ function render(){
     <div class="eff ${eg.eff?'on':''}"><b>✿ Efflorescent EGO</b>
       ${eg.eff
         ? `<span class="tag">ATIVO</span> Bônus nos acertos: <b>+${6+S.lvl}</b> <span class="mu">(+6 + nível; vale para dano e clash)</span> ${btn('egooff','','Encerrar')}`
-        : `<span class="mu">Inativo. Com o EGO manifestado, use uma habilidade de EGO para entrar no estado Efflorescent: +6 + nível nos acertos (dano e clash).</span>`}</div>
+        : `<span class="mu">Inativo. Com o EGO manifestado, use uma habilidade de EGO para entrar no estado Efflorescent: +6 + nível nos acertos (dano e clash).</span>`}
+      <div class="row" style="margin-top:8px">
+        ${eg.imgEff?`<img src="${eg.imgEff}" alt="" style="height:48px;border:1px solid var(--bd);border-radius:3px">`:''}
+        <span class="mu">Imagem do personagem neste estado</span>
+        ${btn('effimg','',eg.imgEff?'Trocar imagem':'Escolher imagem')}
+        ${eg.imgEff?btn('effimgdel','','Remover'):''}
+        <input type="file" id="fileEff" accept="image/*" hidden>
+      </div>
+    </div>
     <h2 style="margin-top:14px">Habilidades de EGO</h2>
     ${[0,1,2].map(i=>`<div class="fx" style="border-left-color:var(--gold)">
       <div class="row"><input style="flex:1;min-width:140px" placeholder="Habilidade ${i+1}" data-b="ego.hab.${i}.n" value="${esc(eg.hab[i]?.n)}">
@@ -208,7 +216,8 @@ function render(){
   document.body.classList.toggle('on',ativo);
   document.body.classList.toggle('eff', !!S.ego.eff);   // tema escuro do Efflorescent
   $('#pic').onclick = () => $('#file').click();
-  $('#file').onchange = carregarImagem;
+  $('#file').onchange = e => carregarImagem(e, (S.ego.eff && S.ego.imgEff) ? 'ego.imgEff' : 'img');
+  $('#fileEff').onchange = e => carregarImagem(e, 'ego.imgEff');
 
 }
 
@@ -284,6 +293,7 @@ function acao(a,x){
   INDICE.lista.push({ id, nome }); INDICE.atual = id; salvarIndice();
   S = padrao(); S.f.nome = nome; LOG = ''; LOGEGO = '';
   break;
+
 }
 case 'fdup': {                                        
   salvar();
@@ -304,6 +314,8 @@ case 'fdel': {
   S = carregar(); LOG = ''; LOGEGO = '';
   break;
 }
+    case 'effimg': $('#fileEff').click(); return;     
+    case 'effimgdel': S.ego.imgEff = ''; break;
     case 'egoman': { const r=d(20); LOGEGO=`Manifestação de EGO: 1d20 (${r}) + Carisma ${C.eff.car} = ${r+C.eff.car}. O mestre define a dificuldade; em falha pode ocorrer Distorção.`; break; }
     case 'egosan': { const r=d(20); LOGEGO=`Teste de sanidade: 1d20 (${r}) + Carisma ${C.eff.car} = ${r+C.eff.car}`; break; }
     case 'cena': cena(); break;
@@ -356,14 +368,14 @@ document.addEventListener('input', e=>{
   if(num) num.value = el.value;
 });
 
-function carregarImagem(e){
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=()=>{ const im=new Image(); im.onload=()=>{
-      const k=Math.min(1,400/Math.max(im.width,im.height)), c=document.createElement('canvas');
-      c.width=im.width*k; c.height=im.height*k; c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      S.img=c.toDataURL('image/jpeg',.8); salvar(); render(); };
-    im.src=r.result; };
+function carregarImagem(e, campo){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { const im = new Image(); im.onload = () => {
+      const k = Math.min(1, 400/Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = im.width*k; c.height = im.height*k; c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      set(campo, c.toDataURL('image/jpeg',.8)); salvar(); render(); };
+    im.src = r.result; };
   r.readAsDataURL(f);
 }
 render();
