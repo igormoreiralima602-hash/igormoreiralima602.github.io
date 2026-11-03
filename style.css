@@ -151,3 +151,4 @@ body.eff button.au{background:linear-gradient(#b02a43,#6a0f20);color:#fff;border
 body.eff .slider::-webkit-slider-thumb{background:radial-gradient(circle at 35% 35%,#e0334f,#5c0f1e);border-color:#000}
 body.eff .slider::-moz-range-thumb{background:#c4263f;border-color:#000}
 body.eff #log,body.eff #logego{background:rgba(143,29,51,.14)}
+body.eff .pic{border-color:var(--deco);box-shadow:0 0 18px rgba(224,51,79,.5), inset 0 0 22px rgba(0,0,0,.5)}
